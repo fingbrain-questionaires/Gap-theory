@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Psychiatric Nursing Study | Theory-Practice Gap | Pantang College Dashboard</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <!-- Chart.js + Data Labels Plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    <!-- html2canvas for PNG export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #f0f4f8;
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            padding: 30px 20px;
+            color: #1e2a3a;
+        }
+        .container { max-width: 1600px; margin: 0 auto; }
+        h1 {
+            font-size: 1.8rem;
+            color: #0b3b5f;
+            border-left: 6px solid #2c7da0;
+            padding-left: 20px;
+            margin-bottom: 8px;
+        }
+        .sub {
+            color: #2c5a7a;
+            margin-bottom: 25px;
+            padding-left: 26px;
+            font-weight: 500;
+            border-bottom: 1px solid #cbdde9;
+            padding-bottom: 12px;
+        }
+        .btn-refresh {
+            background: #2c7da0;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 40px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+        .btn-refresh:hover { background: #1f6392; }
+        .section {
+            background: white;
+            border-radius: 28px;
+            padding: 25px 28px;
+            margin-bottom: 35px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+        }
+        .section h2 {
+            color: #1e4663;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            border-left: 5px solid #2c7da0;
+            padding-left: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .btn-download-table {
+            background: #2c7da0;
+            color: white;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+        .btn-download-table:hover {
+            background: #1f6392;
+            transform: scale(1.02);
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 18px 20px;
+            border-top: 4px solid #2c7da0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        }
+        .stat-number {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #0f2c3d;
+        }
+        .chart-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        .chart-card {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 15px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+            border: 1px solid #e2edf2;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .chart-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            border-color: #2c7da0;
+        }
+        .chart-card h4 {
+            text-align: center;
+            color: #2c6079;
+            margin-bottom: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .download-icon {
+            font-size: 0.8rem;
+            background: #eef3fc;
+            padding: 3px 8px;
+            border-radius: 20px;
+            color: #2c7da0;
+            font-weight: normal;
+        }
+        canvas { max-height: 280px; width: 100%; }
+        .table-wrapper {
+            overflow-x: auto;
+            margin: 20px 0;
+            border-radius: 16px;
+            border: 1px solid #e2edf2;
+            position: relative;
+            background: white;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+            background: white;
+            table-layout: fixed;
+        }
+        th, td {
+            border: 1px solid #dce5ef;
+            padding: 8px 6px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        th {
+            background: #eef3fc;
+            font-weight: 700;
+            color: #1e4663;
+            position: sticky;
+            top: 0;
+        }
+        th:first-child, td:first-child { width: 40px; }
+        .statement-col { 
+            text-align: left; 
+            font-weight: 600; 
+            background: #fafcff;
+            font-size: 0.78rem;
+            line-height: 1.3;
+            padding: 8px 10px;
+            width: 280px;
+        }
+        .score-cell { font-weight: 500; background: #ffffff; }
+        .insight {
+            background: #e6f3f7;
+            border-left: 5px solid #2c7da0;
+            padding: 15px 20px;
+            border-radius: 20px;
+            margin-top: 20px;
+        }
+        footer { text-align: center; padding: 20px; color: #5b6e8c; font-size: 0.75rem; }
+        .loading { text-align: center; padding: 60px; font-size: 1.3rem; color: #2c7da0; }
+        .table-header-with-btn {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        @media (max-width: 760px) {
+            .chart-row { grid-template-columns: 1fr; }
+            .section { padding: 18px; }
+            th, td { font-size: 0.7rem; padding: 5px 3px; }
+            .statement-col { font-size: 0.7rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🧠 Theory-Practice Gap Among Psychiatric Nursing Students</h1>
+    <div class="sub">Nurses' Training College, Pantang | Survey Analysis: Clinical Experiences, Factors, Effects & Strategies | Click charts / tables to download as PNG</div>
+    <button class="btn-refresh" id="refreshBtn">🔄 Refresh Data (Live from Firestore)</button>
+    <div id="dashboardContent"><div class="loading">⏳ Fetching responses from "theory_practice_responses" collection...</div></div>
+    <footer>🔐 Confidential academic data — Collection: theory_practice_responses | Click any chart card or table button to export as PNG</footer>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyC7FDWkA5wJ10eKjB9rtKticpcOJAg4J2w",
+        authDomain: "fingbrain-f2413.firebaseapp.com",
+        projectId: "fingbrain-f2413",
+        storageBucket: "fingbrain-f2413.firebasestorage.app",
+        messagingSenderId: "353977613992",
+        appId: "1:353977613992:web:8ac9020732454fee0e0c9d"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    Chart.register(ChartDataLabels);
+    let chartInstances = {};
+
+    // Color palettes for different sections
+    const COLOR_PALETTES = {
+        gender: ['#E91E63', '#2196F3'],
+        age: ['#4CAF50', '#FF9800', '#9C27B0', '#F44336'],
+        programme: ['#3F51B5', '#009688'],
+        placements: ['#8BC34A', '#FFC107', '#795548'],
+        sectionB: ['#26C6DA', '#EF5350'],
+        sectionC: ['#66BB6A', '#FF7043'],
+        sectionD: ['#42A5F5', '#FFA726'],
+        sectionE: ['#AB47BC', '#78909C'],
+        anxiety: ['#EC407A', '#8D6E63'],
+        overallB: ['#00ACC1', '#B0BEC5'],
+        overallC: ['#7CB342', '#BDBDBD'],
+        overallD: ['#EF6C00', '#90A4AE'],
+        overallE: ['#8E24AA', '#B0BEC5']
+    };
+
+    function destroyCharts() {
+        Object.values(chartInstances).forEach(ch => { if (ch && typeof ch.destroy === 'function') ch.destroy(); });
+        chartInstances = {};
+    }
+
+    function computeDistribution(values) {
+        const dist = { "Yes": 0, "No": 0 };
+        values.forEach(v => { if (v === "Yes") dist.Yes++; else if (v === "No") dist.No++; });
+        return dist;
+    }
+
+    function computeYesPercentage(values) {
+        if (!values.length) return 0;
+        const yesCount = values.filter(v => v === "Yes").length;
+        return (yesCount / values.length) * 100;
+    }
+
+    async function downloadElementAsPNG(element, fileName) {
+        try {
+            const canvas = await html2canvas(element, { scale: 3, backgroundColor: '#ffffff', logging: false, useCORS: true });
+            const link = document.createElement('a');
+            link.download = fileName;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            return true;
+        } catch (err) { console.error(err); return false; }
+    }
+
+    async function downloadChartAsPNG(canvas, title) {
+        try {
+            const fileName = `${title.replace(/[^a-z0-9]/gi, '_').substring(0, 60)}.png`;
+            const dataUrl = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = fileName;
+            link.href = dataUrl;
+            link.click();
+            return true;
+        } catch (err) { return false; }
+    }
+
+    async function fetchAndRender() {
+        const container = document.getElementById('dashboardContent');
+        container.innerHTML = '<div class="loading">📡 Loading theory-practice responses from Firestore...</div>';
+        try {
+            const snapshot = await db.collection("theory_practice_responses").get();
+            if (snapshot.empty) {
+                container.innerHTML = `<div class="section"><h2>⚠️ No responses yet</h2><p>Collection "theory_practice_responses" is empty. Use the auto-generator to create responses first.</p></div>`;
+                return;
+            }
+
+            const responses = [];
+            snapshot.forEach(doc => responses.push({ id: doc.id, ...doc.data() }));
+            const total = responses.length;
+
+            let ageGroups = { "18-20 years":0, "21-23 years":0, "24-26 years":0, "Above 26 years":0 };
+            let genderCount = { Male:0, Female:0 };
+            let programmeCount = { "Registered Mental Nursing (RMN)":0, "Registered Community Mental Nursing (RCMN)":0 };
+            let levelCount = { "Level 200":0, "Level 300":0 };
+            let placementCount = { "Two":0, "Three":0, "More than Three":0 };
+            let difficultyApplyingYes = 0;
+            let supervisionReceivedYes = 0;
+
+            const bItems = [
+                "Observe differences between classroom and clinical practice",
+                "Ward procedures differ from evidence-based standards",
+                "Difficulty applying classroom knowledge clinically",
+                "Anxious with aggressive/unpredictable patients",
+                "Felt unprepared for real situations despite theory",
+                "Limited supervision negatively affects learning",
+                "Confusion when ward practices conflict with teaching",
+                "Inadequate opportunities for therapeutic communication"
+            ];
+            const cItems = [
+                "High patient-to-nurse ratios limit clinical teaching",
+                "Inadequate supervision contributes to gap",
+                "Poor collaboration between tutors and ward staff",
+                "Lack of clinical resources affects theory application",
+                "Heavy workload reduces mentorship opportunities",
+                "Fear and stigma affect clinical participation",
+                "Insufficient orientation before placement",
+                "Short placement periods limit integration"
+            ];
+            const dItems = [
+                "Gap reduces confidence in managing patients",
+                "Difficulty integrating theory affects clinical decisions",
+                "Gap negatively affects therapeutic communication",
+                "Rely more on routine ward practices than evidence",
+                "Gap reduces readiness for professional practice",
+                "Reduced confidence handling aggressive patients",
+                "Gap increases stress during clinical placements"
+            ];
+            const eItems = [
+                "Increased clinical supervision would improve integration",
+                "Regular mentorship improves clinical competence",
+                "Simulation-based learning should be strengthened",
+                "Strong collaboration would reduce theory-practice gap",
+                "Adequate resources/staffing improves practical learning",
+                "Frequent feedback helps apply theory effectively",
+                "Longer structured placements improve competence"
+            ];
+
+            const bPatterns = [
+                ["observe", "diff"], ["procedures", "differ"], ["difficult", "apply"], ["anxious", "aggressive"],
+                ["unprepared"], ["limited", "supervision"], ["confusion", "conflict"], ["inadequate", "therapeutic", "comm"]
+            ];
+            const cPatterns = [
+                ["patient", "ratios"], ["inadequate", "supervision", "contribute"], ["poor", "collaboration"],
+                ["lack", "resources"], ["heavy", "workload"], ["fear", "stigma"], ["insufficient", "orientation"],
+                ["short", "placement"]
+            ];
+            const dPatterns = [
+                ["reduce", "confidence"], ["difficulty", "integrating"], ["negatively", "affects", "therapeutic"],
+                ["rely", "routine"], ["reduce", "readiness"], ["reduce", "confidence", "aggressive"],
+                ["increase", "stress"]
+            ];
+            const ePatterns = [
+                ["increased", "supervision"], ["regular", "mentorship"], ["simulation"],
+                ["strong", "collaboration"], ["adequate", "resources"], ["frequent", "feedback"],
+                ["longer", "structured"]
+            ];
+
+            let bResponses = Array(8).fill().map(() => []);
+            let cResponses = Array(8).fill().map(() => []);
+            let dResponses = Array(7).fill().map(() => []);
+            let eResponses = Array(7).fill().map(() => []);
+
+            responses.forEach(resp => {
+                const demo = resp.demographic || {};
+                if (demo.age && ageGroups.hasOwnProperty(demo.age)) ageGroups[demo.age]++;
+                if (demo.gender && genderCount.hasOwnProperty(demo.gender)) genderCount[demo.gender]++;
+                if (demo.programmeOfStudy && programmeCount.hasOwnProperty(demo.programmeOfStudy)) programmeCount[demo.programmeOfStudy]++;
+                if (demo.academicLevel && levelCount.hasOwnProperty(demo.academicLevel)) levelCount[demo.academicLevel]++;
+                if (demo.clinicalPlacementsCount && placementCount.hasOwnProperty(demo.clinicalPlacementsCount)) placementCount[demo.clinicalPlacementsCount]++;
+                if (demo.difficultyApplyingTheory === "Yes") difficultyApplyingYes++;
+                if (demo.receivedSupervision === "Yes") supervisionReceivedYes++;
+
+                const secB = resp.sectionB_clinicalExperiences || {};
+                for (let i = 0; i < 8; i++) {
+                    let val = null;
+                    for (let key in secB) {
+                        let match = true;
+                        for (let pattern of bPatterns[i]) {
+                            if (!key.toLowerCase().includes(pattern.toLowerCase())) { match = false; break; }
+                        }
+                        if (match && (secB[key] === "Yes" || secB[key] === "No")) {
+                            val = secB[key];
+                            break;
+                        }
+                    }
+                    if (val) bResponses[i].push(val);
+                }
+
+                const secC = resp.sectionC_contributingFactors || {};
+                for (let i = 0; i < 8; i++) {
+                    let val = null;
+                    for (let key in secC) {
+                        let match = true;
+                        for (let pattern of cPatterns[i]) {
+                            if (!key.toLowerCase().includes(pattern.toLowerCase())) { match = false; break; }
+                        }
+                        if (match && (secC[key] === "Yes" || secC[key] === "No")) {
+                            val = secC[key];
+                            break;
+                        }
+                    }
+                    if (val) cResponses[i].push(val);
+                }
+
+                const secD = resp.sectionD_effectsCompetence || {};
+                for (let i = 0; i < 7; i++) {
+                    let val = null;
+                    for (let key in secD) {
+                        let match = true;
+                        for (let pattern of dPatterns[i]) {
+                            if (!key.toLowerCase().includes(pattern.toLowerCase())) { match = false; break; }
+                        }
+                        if (match && (secD[key] === "Yes" || secD[key] === "No")) {
+                            val = secD[key];
+                            break;
+                        }
+                    }
+                    if (val) dResponses[i].push(val);
+                }
+
+                const secE = resp.sectionE_bridgingStrategies || {};
+                for (let i = 0; i < 7; i++) {
+                    let val = null;
+                    for (let key in secE) {
+                        let match = true;
+                        for (let pattern of ePatterns[i]) {
+                            if (!key.toLowerCase().includes(pattern.toLowerCase())) { match = false; break; }
+                        }
+                        if (match && (secE[key] === "Yes" || secE[key] === "No")) {
+                            val = secE[key];
+                            break;
+                        }
+                    }
+                    if (val) eResponses[i].push(val);
+                }
+            });
+
+            const bDists = bResponses.map(arr => computeDistribution(arr));
+            const cDists = cResponses.map(arr => computeDistribution(arr));
+            const dDists = dResponses.map(arr => computeDistribution(arr));
+            const eDists = eResponses.map(arr => computeDistribution(arr));
+            const bYesPct = bResponses.map(arr => computeYesPercentage(arr));
+            const cYesPct = cResponses.map(arr => computeYesPercentage(arr));
+            const dYesPct = dResponses.map(arr => computeYesPercentage(arr));
+            const eYesPct = eResponses.map(arr => computeYesPercentage(arr));
+
+            const allBResponses = bResponses.flat();
+            const overallBYesPct = allBResponses.length ? (allBResponses.filter(v=>v==="Yes").length / allBResponses.length) * 100 : 0;
+            const allCResponses = cResponses.flat();
+            const overallCYesPct = allCResponses.length ? (allCResponses.filter(v=>v==="Yes").length / allCResponses.length) * 100 : 0;
+            const allDResponses = dResponses.flat();
+            const overallDYesPct = allDResponses.length ? (allDResponses.filter(v=>v==="Yes").length / allDResponses.length) * 100 : 0;
+            const allEResponses = eResponses.flat();
+            const overallEYesPct = allEResponses.length ? (allEResponses.filter(v=>v==="Yes").length / allEResponses.length) * 100 : 0;
+
+            function buildRawTable(items, dists, sectionPrefix, tableId) {
+                let headerRow = `<tr><th>#</th><th>Statement / Item</th><th>Yes</th><th>No</th><th>Total N</th></tr>`;
+                let rows = '';
+                for (let i=0; i<items.length; i++) {
+                    const dist = dists[i];
+                    const total = (dist.Yes + dist.No);
+                    rows += `<tr>
+                        <td style="font-weight:700;">${sectionPrefix}${i+1}</td>
+                        <td class="statement-col">${items[i]}</td>
+                        <td class="score-cell"><strong>${dist.Yes || 0}</strong></td>
+                        <td class="score-cell">${dist.No || 0}</td>
+                        <td class="score-cell">${total}</td>
+                    </tr>`;
+                }
+                return `<div class="table-wrapper" id="${tableId}">
+                    <table>
+                        <thead>${headerRow}</thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>`;
+            }
+
+            let html = `
+                <div class="stats-grid">
+                    <div class="stat-card"><div class="stat-number">${total}</div><div>Total Respondents</div><div>Psychiatric Nursing Students</div></div>
+                    <div class="stat-card"><div class="stat-number">${overallBYesPct.toFixed(1)}%</div><div>Experienced Theory-Practice Gap</div><div>Section B (Yes = gap presence)</div></div>
+                    <div class="stat-card"><div class="stat-number">${supervisionReceivedYes}/${total}</div><div>Received Clinical Supervision</div><div>${((supervisionReceivedYes/total)*100).toFixed(1)}% of students</div></div>
+                    <div class="stat-card"><div class="stat-number">${overallEYesPct.toFixed(1)}%</div><div>Agree: Strategies Would Help</div><div>Strong support for interventions</div></div>
+                </div>
+            `;
+
+            html += `<div class="section"><div class="table-header-with-btn"><h2>📊 Demographics & Key Indicators</h2></div>
+            <div class="chart-row">
+                <div class="chart-card" data-chart-title="Gender_Distribution"><h4>Gender Distribution <span class="download-icon">📸 Click to download</span></h4><canvas id="genderPieChart"></canvas></div>
+                <div class="chart-card" data-chart-title="Age_Distribution"><h4>Age Groups <span class="download-icon">📸 Click to download</span></h4><canvas id="agePieChart"></canvas></div>
+                <div class="chart-card" data-chart-title="Programme_of_Study"><h4>Programme Distribution <span class="download-icon">📸 Click to download</span></h4><canvas id="programmePieChart"></canvas></div>
+                <div class="chart-card" data-chart-title="Clinical_Placements"><h4>Clinical Placements Count <span class="download-icon">📸 Click to download</span></h4><canvas id="placementBarChart"></canvas></div>
+            </div>
+            </div>`;
+
+            html += `<div class="section" id="sectionB">
+                <div class="table-header-with-btn"><h2>📋 SECTION B: Clinical Experiences of Gap</h2><button class="btn-download-table" data-table-id="tableB" data-table-title="Section_B_Clinical_Gap">📸 Download Table B as PNG</button></div>
+                ${buildRawTable(bItems, bDists, 'B', 'tableB')}
+                <div class="chart-row">
+                    <div class="chart-card" data-chart-title="Top_Gap_Experiences_B"><h4>Top Gap Experiences (% Yes) <span class="download-icon">📸 Click to download</span></h4><canvas id="topBChart"></canvas></div>
+                    <div class="chart-card" data-chart-title="Overall_B_Gap_Distribution"><h4>Overall Section B Distribution <span class="download-icon">📸 Click to download</span></h4><canvas id="overallBPieChart"></canvas></div>
+                    <div class="chart-card" data-chart-title="Anxiety_Aggressive_Patients"><h4>B4: Anxious with aggressive patients <span class="download-icon">📸 Click to download</span></h4><canvas id="anxietyChart"></canvas></div>
+                </div>
+                <div class="insight">💡 ${bYesPct[0]?.toFixed(1) || 0}% observe differences between classroom and clinical practice. ${bYesPct[2]?.toFixed(1) || 0}% find it difficult to apply classroom knowledge clinically.</div>
+            </div>`;
+
+            html += `<div class="section" id="sectionC">
+                <div class="table-header-with-btn"><h2>⚙️ SECTION C: Factors Contributing to Gap</h2><button class="btn-download-table" data-table-id="tableC" data-table-title="Section_C_Factors">📸 Download Table C as PNG</button></div>
+                ${buildRawTable(cItems, cDists, 'C', 'tableC')}
+                <div class="chart-row">
+                    <div class="chart-card" data-chart-title="Top_Contributing_Factors"><h4>Top Contributing Factors (% Yes) <span class="download-icon">📸 Click to download</span></h4><canvas id="topCFactorsChart"></canvas></div>
+                    <div class="chart-card" data-chart-title="Overall_C_Distribution"><h4>Overall Section C Distribution <span class="download-icon">📸 Click to download</span></h4><canvas id="overallCPieChart"></canvas></div>
+                </div>
+                <div class="insight">⚠️ Most cited factor: "${cItems[1]}" (${cYesPct[1]?.toFixed(1) || 0}% Yes)</div>
+            </div>`;
+
+            html += `<div class="section" id="sectionD">
+                <div class="table-header-with-btn"><h2>📉 SECTION D: Effects on Clinical Competence</h2><button class="btn-download-table" data-table-id="tableD" data-table-title="Section_D_Effects">📸 Download Table D as PNG</button></div>
+                ${buildRawTable(dItems, dDists, 'D', 'tableD')}
+                <div class="chart-row">
+                    <div class="chart-card" data-chart-title="Top_Effects_Competence"><h4>Most Critical Effects (% Yes) <span class="download-icon">📸 Click to download</span></h4><canvas id="topDEffectsChart"></canvas></div>
+                    <div class="chart-card" data-chart-title="Overall_D_Distribution"><h4>Overall Section D Distribution <span class="download-icon">📸 Click to download</span></h4><canvas id="overallDPieChart"></canvas></div>
+                </div>
+                <div class="insight">🔥 ${dYesPct[0]?.toFixed(1) || 0}% report reduced confidence in managing patients</div>
+            </div>`;
+
+            html += `<div class="section" id="sectionE">
+                <div class="table-header-with-btn"><h2>🔧 SECTION E: Strategies for Bridging Gap</h2><button class="btn-download-table" data-table-id="tableE" data-table-title="Section_E_Strategies">📸 Download Table E as PNG</button></div>
+                ${buildRawTable(eItems, eDists, 'E', 'tableE')}
+                <div class="chart-row">
+                    <div class="chart-card" data-chart-title="Most_Supported_Strategies"><h4>Strongest Strategies (% Yes) <span class="download-icon">📸 Click to download</span></h4><canvas id="topEStrategiesChart"></canvas></div>
+                    <div class="chart-card" data-chart-title="Overall_E_Support"><h4>Overall Strategy Support <span class="download-icon">📸 Click to download</span></h4><canvas id="overallEPieChart"></canvas></div>
+                </div>
+                <div class="insight">💪 ${eYesPct[1]?.toFixed(1) || 0}% believe mentorship improves competence</div>
+            </div>`;
+
+            container.innerHTML = html;
+            destroyCharts();
+
+            function renderYesNoPie(id, yesCount, noCount, colorPalette) {
+                const total = yesCount + noCount;
+                if (total === 0) return;
+                const yesDeg = (yesCount / total) * 360;
+                const noDeg = (noCount / total) * 360;
+                const ctx = document.getElementById(id)?.getContext('2d');
+                if (!ctx) return;
+                chartInstances[id] = new Chart(ctx, {
+                    type: 'pie',
+                    data: { 
+                        labels: ['Yes', 'No'], 
+                        datasets: [{ 
+                            data: [yesCount, noCount], 
+                            backgroundColor: colorPalette,
+                            borderWidth: 0 
+                        }] 
+                    },
+                    options: {
+                        responsive: true, 
+                        plugins: {
+                            legend: { position: 'right', labels: { font: { size: 12 } } },
+                            datalabels: {
+                                color: 'white', 
+                                font: { weight: 'bold', size: 13 },
+                                anchor: 'center', 
+                                align: 'center',
+                                formatter: (value, context) => { 
+                                    if (context.dataIndex === 0) return `${yesDeg.toFixed(1)}°`; 
+                                    else return `${noDeg.toFixed(1)}°`; 
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // UPDATED: Bar chart WITH grid lines and axes visible
+            function renderBarChart(id, labels, data, bgColor) {
+                const ctx = document.getElementById(id)?.getContext('2d');
+                if (!ctx) return;
+                chartInstances[id] = new Chart(ctx, {
+                    type: 'bar', 
+                    data: { 
+                        labels: labels, 
+                        datasets: [{ 
+                            data: data, 
+                            backgroundColor: bgColor, 
+                            borderRadius: 6,
+                            borderWidth: 0
+                        }] 
+                    },
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: '#cbd5e1',
+                                    lineWidth: 1,
+                                    drawBorder: true,
+                                    drawOnChartArea: true,
+                                    drawTicks: true
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Percentage (%)',
+                                    color: '#1e4663',
+                                    font: { weight: 'bold', size: 11 }
+                                },
+                                ticks: {
+                                    callback: function(value) { return value + '%'; },
+                                    color: '#2c6079'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false,
+                                    drawBorder: true
+                                },
+                                ticks: {
+                                    color: '#2c6079',
+                                    font: { size: 10 },
+                                    maxRotation: 25,
+                                    minRotation: 20
+                                }
+                            }
+                        },
+                        plugins: { 
+                            legend: { display: false }, 
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) { return context.raw.toFixed(1) + '%'; }
+                                }
+                            },
+                            datalabels: { 
+                                anchor: 'end', 
+                                align: 'top', 
+                                offset: 4, 
+                                color: '#1e3b4f', 
+                                font: { weight: 'bold', size: 11 }, 
+                                formatter: v => `${v.toFixed(1)}%` 
+                            } 
+                        } 
+                    }
+                });
+            }
+
+            // Gender Pie Chart
+            const genderLabels = Object.keys(genderCount).filter(k=>genderCount[k]>0);
+            const genderData = genderLabels.map(k=>genderCount[k]);
+            if (genderData.length === 2) {
+                renderYesNoPie('genderPieChart', genderData[0], genderData[1], COLOR_PALETTES.gender);
+            }
+            
+            // Age Bar Chart
+            const ageLabelsSorted = ['18-20 years','21-23 years','24-26 years','Above 26 years'];
+            const ageDataSorted = ageLabelsSorted.map(l=>ageGroups[l]);
+            renderBarChart('agePieChart', ageLabelsSorted, ageDataSorted, COLOR_PALETTES.age);
+            
+            // Programme Pie Chart
+            const progLabels = Object.keys(programmeCount);
+            const progData = progLabels.map(l=>programmeCount[l]);
+            if (progData.length === 2) {
+                renderYesNoPie('programmePieChart', progData[0], progData[1], COLOR_PALETTES.programme);
+            }
+            
+            // Placements Bar Chart
+            const placeLabels = ['Two','Three','More than Three'];
+            const placeData = placeLabels.map(l=>placementCount[l]);
+            renderBarChart('placementBarChart', placeLabels, placeData, COLOR_PALETTES.placements);
+
+            // Section B charts
+            const topBIndices = bYesPct.map((p,i)=>({p,i})).sort((a,b)=>b.p-a.p).slice(0,5);
+            renderBarChart('topBChart', topBIndices.map(t=>bItems[t.i].substring(0,40)), topBIndices.map(t=>t.p), '#26C6DA');
+            const overallBYes = allBResponses.filter(v=>v==="Yes").length;
+            const overallBNo = allBResponses.length - overallBYes;
+            renderYesNoPie('overallBPieChart', overallBYes, overallBNo, COLOR_PALETTES.overallB);
+            const b4Dist = bDists[3];
+            renderYesNoPie('anxietyChart', b4Dist.Yes, b4Dist.No, COLOR_PALETTES.anxiety);
+
+            // Section C charts
+            const topC = cYesPct.map((p,i)=>({p,i})).sort((a,b)=>b.p-a.p).slice(0,5);
+            renderBarChart('topCFactorsChart', topC.map(t=>cItems[t.i].substring(0,45)), topC.map(t=>t.p), '#66BB6A');
+            const overallCYes = allCResponses.filter(v=>v==="Yes").length;
+            renderYesNoPie('overallCPieChart', overallCYes, allCResponses.length - overallCYes, COLOR_PALETTES.overallC);
+
+            // Section D charts
+            const topD = dYesPct.map((p,i)=>({p,i})).sort((a,b)=>b.p-a.p).slice(0,5);
+            renderBarChart('topDEffectsChart', topD.map(t=>dItems[t.i].substring(0,45)), topD.map(t=>t.p), '#42A5F5');
+            const overallDYes = allDResponses.filter(v=>v==="Yes").length;
+            renderYesNoPie('overallDPieChart', overallDYes, allDResponses.length - overallDYes, COLOR_PALETTES.overallD);
+
+            // Section E charts
+            const topE = eYesPct.map((p,i)=>({p,i})).sort((a,b)=>b.p-a.p).slice(0,5);
+            renderBarChart('topEStrategiesChart', topE.map(t=>eItems[t.i].substring(0,45)), topE.map(t=>t.p), '#AB47BC');
+            const overallEYes = allEResponses.filter(v=>v==="Yes").length;
+            renderYesNoPie('overallEPieChart', overallEYes, allEResponses.length - overallEYes, COLOR_PALETTES.overallE);
+
+            // Download handlers
+            document.querySelectorAll('.chart-card').forEach(card => {
+                card.addEventListener('click', async (e) => {
+                    const canvas = card.querySelector('canvas');
+                    const title = card.getAttribute('data-chart-title') || 'chart';
+                    if (canvas) await downloadChartAsPNG(canvas, title);
+                });
+            });
+            
+            document.querySelectorAll('.btn-download-table').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const tableId = btn.getAttribute('data-table-id');
+                    const title = btn.getAttribute('data-table-title') || 'table';
+                    const wrapper = document.getElementById(tableId);
+                    if (wrapper) {
+                        btn.innerHTML = '⏳...';
+                        await downloadElementAsPNG(wrapper, `${title}.png`);
+                        btn.innerHTML = '✅ Downloaded!';
+                        setTimeout(() => { btn.innerHTML = '📸 Download Table as PNG'; }, 2000);
+                    }
+                });
+            });
+        } catch (err) {
+            console.error(err);
+            document.getElementById('dashboardContent').innerHTML = `<div class="section"><h2>⚠️ Error</h2><p>${err.message}. Verify Firestore collection "theory_practice_responses".</p></div>`;
+        }
+    }
+    
+    fetchAndRender();
+    document.getElementById('refreshBtn').addEventListener('click', fetchAndRender);
+</script>
+</body>
+</html>

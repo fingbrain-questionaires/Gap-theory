@@ -18,6 +18,7 @@
       font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
       padding: 2rem 1rem;
       color: #1a2c3e;
+      position: relative;
     }
     .container {
       max-width: 1100px;
@@ -108,6 +109,9 @@
       border-radius: 60px;
       transition: 0.1s;
     }
+    .options label:hover {
+      background: #e2edf2;
+    }
     .options input {
       width: 18px;
       height: 18px;
@@ -144,6 +148,11 @@
       background: white;
       font-size: 0.9rem;
       font-family: inherit;
+      cursor: pointer;
+    }
+    select:focus, input:focus {
+      outline: none;
+      border-color: #2c7da0;
     }
     .inline-radio {
       display: flex;
@@ -156,6 +165,7 @@
       display: inline-flex;
       gap: 0.3rem;
       align-items: center;
+      cursor: pointer;
     }
     .btn-submit {
       background: #1f6e8c;
@@ -198,6 +208,93 @@
       margin-top: 1.5rem;
       color: #6f8f9c;
     }
+
+    /* Floating Action Buttons */
+    .fab-container {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      z-index: 1000;
+    }
+    .fab-main {
+      width: 60px;
+      height: 60px;
+      background: #1f6e8c;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      transition: all 0.3s ease;
+      color: white;
+      font-size: 28px;
+      font-weight: bold;
+      border: none;
+    }
+    .fab-main:hover {
+      background: #0e4f68;
+      transform: scale(1.05);
+    }
+    .fab-menu {
+      position: absolute;
+      bottom: 70px;
+      right: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(20px);
+      transition: all 0.3s ease;
+    }
+    .fab-container.open .fab-menu {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+    .fab-item {
+      width: 140px;
+      background: white;
+      border-radius: 40px;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: #1f6e8c;
+      font-weight: 600;
+      font-size: 0.9rem;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+      transition: all 0.2s ease;
+      border: 1px solid #dce9ef;
+    }
+    .fab-item:hover {
+      background: #1f6e8c;
+      color: white;
+      transform: translateX(-5px);
+    }
+    .fab-item span:first-child {
+      font-size: 1.2rem;
+    }
+    .fab-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.3);
+      z-index: 999;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+    .fab-container.open ~ .fab-overlay,
+    .fab-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
     @media (max-width: 650px) {
       .container {
         padding: 1rem;
@@ -205,12 +302,22 @@
       .section {
         padding: 1rem;
       }
+      .fab-item {
+        width: 120px;
+        font-size: 0.8rem;
+        padding: 8px 12px;
+      }
+      .fab-main {
+        width: 50px;
+        height: 50px;
+        font-size: 24px;
+      }
     }
   </style>
 </head>
 <body>
 <div class="container">
-  <div class="badge">📋 Nurses’ Training College, Pantang | Research Study</div>
+  <div class="badge">📋 Nurses' Training College, Pantang | Research Study</div>
   <h1>The Theory-Practice Gap Among Psychiatric Nursing Students</h1>
   <div class="subhead">📍 Confidential questionnaire • academic use only</div>
 
@@ -308,7 +415,43 @@
   <footer>Confidential • Responses stored in "theory_practice_responses" collection • Data for academic research</footer>
 </div>
 
+<!-- Floating Action Buttons -->
+<div class="fab-container" id="fabContainer">
+  <button class="fab-main" id="fabMain">☰</button>
+  <div class="fab-menu">
+    <a href="dashboard.html" class="fab-item">
+      <span>📊</span>
+      <span>Dashboard</span>
+    </a>
+    <a href="help.html" class="fab-item">
+      <span>❓</span>
+      <span>Quota filler</span>
+    </a>
+  </div>
+</div>
+<div class="fab-overlay" id="fabOverlay"></div>
+
 <script>
+  // Floating Action Button Toggle
+  const fabContainer = document.getElementById('fabContainer');
+  const fabMain = document.getElementById('fabMain');
+  const fabOverlay = document.getElementById('fabOverlay');
+
+  function toggleFab() {
+    fabContainer.classList.toggle('open');
+    fabOverlay.classList.toggle('active');
+  }
+
+  fabMain.addEventListener('click', toggleFab);
+  fabOverlay.addEventListener('click', toggleFab);
+
+  // Close FAB when pressing Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && fabContainer.classList.contains('open')) {
+      toggleFab();
+    }
+  });
+
   // ----------------------------- FIREBASE INIT (provided config) -------------------------
   const firebaseConfig = {
     apiKey: "AIzaSyC7FDWkA5wJ10eKjB9rtKticpcOJAg4J2w",
@@ -320,11 +463,9 @@
   };
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
-  // Collection name: theory_practice_responses (as per requirement: create a collection there for responses)
   const COLLECTION_NAME = "theory_practice_responses";
 
   // ----------------------------- QUESTION BANK ------------------------------------------
-  // Section B: Clinical experiences (8 items) - exact matching research questions
   const sectionBItems = [
     "Do you frequently observe differences between classroom teaching and clinical practice in psychiatric wards?",
     "Do the clinical procedures performed by ward staff differ from the evidence-based standards taught in school?",
@@ -336,7 +477,6 @@
     "Do you get inadequate opportunities to practice therapeutic communication skills during clinical placements?"
   ];
 
-  // Section C: Factors contributing (8 items)
   const sectionCItems = [
     "Do high patient-to-nurse ratios on the wards limit opportunities for effective clinical teaching?",
     "Does inadequate supervision on the wards contribute to your experience of the theory-practice gap?",
@@ -348,7 +488,6 @@
     "Do you find that short clinical placement periods limit the effective integration of theory into practice?"
   ];
 
-  // Section D: Effects (7 items)
   const sectionDItems = [
     "Does the theory-practice gap reduce your confidence in managing psychiatric patients?",
     "Does difficulty integrating theory into practice negatively affect your clinical decision-making skills?",
@@ -359,7 +498,6 @@
     "Does the difficulty of applying theory in practice increase your stress levels during clinical placements?"
   ];
 
-  // Section E: Strategies (7 items)
   const sectionEItems = [
     "Would increased clinical supervision improve your integration of theory and practice?",
     "Would regular mentorship by experienced psychiatric nurses improve your clinical competence?",
@@ -370,7 +508,6 @@
     "Would longer and more structured clinical placements improve your practical competence?"
   ];
 
-  // Helper to generate radio group (Yes/No) with unique name based on index and prefix
   function generateRadioGroup(prefix, idx, questionText) {
     const name = `${prefix}_${idx}`;
     return `
@@ -385,21 +522,16 @@
   }
 
   function renderSections() {
-    // Section B
     const bContainer = document.getElementById("sectionB");
     bContainer.innerHTML = sectionBItems.map((q, i) => generateRadioGroup("expB", i, q)).join('');
-    // Section C
     const cContainer = document.getElementById("sectionC");
     cContainer.innerHTML = sectionCItems.map((q, i) => generateRadioGroup("factorC", i, q)).join('');
-    // Section D
     const dContainer = document.getElementById("sectionD");
     dContainer.innerHTML = sectionDItems.map((q, i) => generateRadioGroup("effectD", i, q)).join('');
-    // Section E
     const eContainer = document.getElementById("sectionE");
     eContainer.innerHTML = sectionEItems.map((q, i) => generateRadioGroup("strategyE", i, q)).join('');
   }
 
-  // Helper to collect radio group values for a given prefix and total count
   function collectRadioGroupValues(prefix, totalCount) {
     let answers = [];
     for (let i = 0; i < totalCount; i++) {
@@ -410,11 +542,9 @@
     return answers;
   }
 
-  // Collect full form + build Firestore document
   async function submitFormData(event) {
     event.preventDefault();
 
-    // 1) DEMOGRAPHICS (standard required fields)
     const age = document.getElementById("age").value;
     const genderElem = document.querySelector('input[name="gender"]:checked');
     const programme = document.getElementById("programme").value;
@@ -428,7 +558,6 @@
       return;
     }
 
-    // Validate all radio groups for sections B, C, D, E
     const bAnswers = collectRadioGroupValues("expB", sectionBItems.length);
     const cAnswers = collectRadioGroupValues("factorC", sectionCItems.length);
     const dAnswers = collectRadioGroupValues("effectD", sectionDItems.length);
@@ -440,7 +569,6 @@
       return;
     }
 
-    // Prepare payload for Firestore
     const responseData = {
       timestamp: firebase.firestore.FieldValue.serverTimestamp(),
       demographic: {
@@ -490,7 +618,6 @@
         q6_frequentFeedback: eAnswers[5],
         q7_longerStructuredPlacements: eAnswers[6]
       },
-      // Also store full questions/answers in raw arrays for flexible analysis (optional)
       rawSectionB_questions: sectionBItems,
       rawSectionB_responses: bAnswers,
       rawSectionC_questions: sectionCItems,
@@ -501,24 +628,17 @@
       rawSectionE_responses: eAnswers
     };
 
-    // Disable submit button to prevent double submission
     const submitBtn = document.querySelector(".btn-submit");
     const originalText = submitBtn.innerText;
     submitBtn.disabled = true;
     submitBtn.innerText = "Sending...";
 
     try {
-      // Save to Firestore collection "theory_practice_responses"
       await db.collection(COLLECTION_NAME).add(responseData);
       showStatus("✅ Questionnaire submitted successfully! Your responses have been stored in the 'theory_practice_responses' collection. Thank you.", false);
-      // Optional: reset form after success? keep data for review but could reset.
       document.getElementById("researchForm").reset();
-      // Re-render radio sections because resetting doesn't clear dynamic radios well? We'll keep it simple: manually clear all radio groups
-      // but to preserve UX better we just reset only selected radios, but user can re-submit if needed. Resetting form removes all.
-      // However dynamic sections need re-generation but easiest: reload page? not user friendly. So we just clear radio groups via DOM.
       clearAllRadios();
-      renderSections();  // fresh clean sections (answers cleared)
-      // Reset demographics selects too (already reset via form.reset)
+      renderSections();
     } catch (error) {
       console.error("Firestore error:", error);
       showStatus(`❌ Submission failed: ${error.message}. Check console & network.`, true);
@@ -547,20 +667,9 @@
     }, 5000);
   }
 
-  // Reset helper for fresh radio groups after reset (ensuring required works)
-  function resetFormAndRebind() {
-    const form = document.getElementById("researchForm");
-    form.reset();
-    clearAllRadios();
-    renderSections();   // re-render all radio grids to have clean required radios
-  }
-
-  // Event listener for submit
   document.getElementById("researchForm").addEventListener("submit", submitFormData);
-  // Initialize dynamic sections
   renderSections();
 
-  // Ensure if user manually wants to "reset" they get consistent state.
   const resetBtn = document.createElement("button");
   resetBtn.type = "button";
   resetBtn.innerText = "⟳ Reset Form";
