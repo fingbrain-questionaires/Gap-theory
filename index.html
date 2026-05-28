@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Research: Theory-Practice Gap | Pantang Nursing College</title>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: #eef2f7;
+      font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      padding: 2rem 1rem;
+      color: #1a2c3e;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 28px;
+      box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.15);
+      overflow: hidden;
+      padding: 1.8rem 2rem 2.5rem;
+    }
+    h1 {
+      font-size: 1.9rem;
+      color: #0b3b4f;
+      border-left: 6px solid #2c7da0;
+      padding-left: 1rem;
+      margin-bottom: 0.35rem;
+    }
+    .subhead {
+      color: #2c5a6e;
+      margin-bottom: 1.5rem;
+      font-weight: 500;
+      border-bottom: 1px solid #cbdbe2;
+      padding-bottom: 0.75rem;
+    }
+    .badge {
+      background: #e6f4f9;
+      display: inline-block;
+      padding: 0.2rem 0.9rem;
+      border-radius: 40px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #1f6e8c;
+      margin-bottom: 1rem;
+    }
+    .section {
+      background: #f9fbfe;
+      border-radius: 24px;
+      padding: 1.3rem 1.5rem;
+      margin-bottom: 2rem;
+      border: 1px solid #e2edf2;
+      transition: 0.1s;
+    }
+    .section h2 {
+      font-size: 1.45rem;
+      font-weight: 600;
+      color: #1e555c;
+      margin-bottom: 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      border-left: 4px solid #3c9bbf;
+      padding-left: 0.8rem;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.2rem;
+    }
+    .question-item {
+      background: white;
+      border-radius: 20px;
+      padding: 0.9rem 1rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      border: 1px solid #e9f0f3;
+      transition: 0.1s;
+    }
+    .question-text {
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      font-size: 0.95rem;
+      color: #1f3e48;
+      line-height: 1.35;
+    }
+    .options {
+      display: flex;
+      gap: 1.8rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .options label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-weight: 500;
+      cursor: pointer;
+      background: #f1f6f9;
+      padding: 0.35rem 1rem;
+      border-radius: 60px;
+      transition: 0.1s;
+    }
+    .options input {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: #2c7da0;
+    }
+    .row {
+      margin-top: 0.5rem;
+    }
+    .demographics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .demo-field {
+      background: white;
+      border-radius: 18px;
+      padding: 0.6rem 1rem;
+      border: 1px solid #dce9ef;
+    }
+    .demo-field label {
+      font-weight: 600;
+      font-size: 0.8rem;
+      color: #2c697b;
+      display: block;
+      margin-bottom: 0.3rem;
+    }
+    select, input[type="text"] {
+      width: 100%;
+      padding: 0.6rem 0.8rem;
+      border-radius: 40px;
+      border: 1px solid #cbdbe0;
+      background: white;
+      font-size: 0.9rem;
+      font-family: inherit;
+    }
+    .inline-radio {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-top: 0.3rem;
+    }
+    .inline-radio label {
+      font-weight: normal;
+      display: inline-flex;
+      gap: 0.3rem;
+      align-items: center;
+    }
+    .btn-submit {
+      background: #1f6e8c;
+      border: none;
+      padding: 1rem 2rem;
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: white;
+      border-radius: 60px;
+      cursor: pointer;
+      width: 100%;
+      transition: 0.2s;
+      margin-top: 0.8rem;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .btn-submit:hover {
+      background: #0e4f68;
+      transform: scale(0.99);
+    }
+    .status-msg {
+      margin-top: 1.5rem;
+      background: #e9f5ea;
+      border-radius: 40px;
+      padding: 0.9rem;
+      text-align: center;
+      font-weight: 500;
+      display: none;
+    }
+    .status-msg.error {
+      background: #ffe6e5;
+      color: #b13e3e;
+    }
+    hr {
+      margin: 1rem 0;
+      border-color: #e2edf2;
+    }
+    footer {
+      font-size: 0.75rem;
+      text-align: center;
+      margin-top: 1.5rem;
+      color: #6f8f9c;
+    }
+    @media (max-width: 650px) {
+      .container {
+        padding: 1rem;
+      }
+      .section {
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="badge">📋 Nurses’ Training College, Pantang | Research Study</div>
+  <h1>The Theory-Practice Gap Among Psychiatric Nursing Students</h1>
+  <div class="subhead">📍 Confidential questionnaire • academic use only</div>
+
+  <form id="researchForm">
+    <!-- SECTION A: DEMOGRAPHIC DATA -->
+    <div class="section">
+      <h2>📋 Section A: Demographic Data</h2>
+      <div class="demographics">
+        <div class="demo-field">
+          <label>1. Age</label>
+          <select id="age" required>
+            <option value="">— Select —</option>
+            <option>18-20 years</option>
+            <option>21-23 years</option>
+            <option>24-26 years</option>
+            <option>Above 26 years</option>
+          </select>
+        </div>
+        <div class="demo-field">
+          <label>2. Gender</label>
+          <div class="inline-radio">
+            <label><input type="radio" name="gender" value="Male" required> Male</label>
+            <label><input type="radio" name="gender" value="Female"> Female</label>
+          </div>
+        </div>
+        <div class="demo-field">
+          <label>3. Programme of Study</label>
+          <select id="programme" required>
+            <option value="">— Select —</option>
+            <option>Registered Mental Nursing (RMN)</option>
+            <option>Registered Community Mental Nursing (RCMN)</option>
+          </select>
+        </div>
+        <div class="demo-field">
+          <label>4. Academic Level</label>
+          <select id="level" required>
+            <option value="">— Select —</option>
+            <option>Level 200</option>
+            <option>Level 300</option>
+          </select>
+        </div>
+        <div class="demo-field">
+          <label>5. Number of Psychiatric Clinical Placements Attended</label>
+          <select id="placements" required>
+            <option value="">— Select —</option>
+            <option>Two</option>
+            <option>Three</option>
+            <option>More than Three</option>
+          </select>
+        </div>
+        <div class="demo-field">
+          <label>6. Difficulty applying classroom knowledge during clinical placement?</label>
+          <div class="inline-radio">
+            <label><input type="radio" name="difficultyApp" value="Yes" required> Yes</label>
+            <label><input type="radio" name="difficultyApp" value="No"> No</label>
+          </div>
+        </div>
+        <div class="demo-field">
+          <label>7. Received supervision from clinical preceptor during placement?</label>
+          <div class="inline-radio">
+            <label><input type="radio" name="supervisionRec" value="Yes" required> Yes</label>
+            <label><input type="radio" name="supervisionRec" value="No"> No</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION B: CLINICAL EXPERIENCES (8 items) -->
+    <div class="section">
+      <h2>🧠 Section B: Clinical Experiences of the Theory-Practice Gap</h2>
+      <div class="grid-2" id="sectionB"></div>
+    </div>
+
+    <!-- SECTION C: FACTORS CONTRIBUTING (8 items) -->
+    <div class="section">
+      <h2>⚙️ Section C: Factors Contributing to the Gap</h2>
+      <div class="grid-2" id="sectionC"></div>
+    </div>
+
+    <!-- SECTION D: EFFECTS ON CLINICAL COMPETENCE (7 items) -->
+    <div class="section">
+      <h2>📉 Section D: Effects on Clinical Competence</h2>
+      <div class="grid-2" id="sectionD"></div>
+    </div>
+
+    <!-- SECTION E: STRATEGIES FOR BRIDGING (7 items) -->
+    <div class="section">
+      <h2>🔧 Section E: Strategies for Bridging the Gap</h2>
+      <div class="grid-2" id="sectionE"></div>
+    </div>
+
+    <button type="submit" class="btn-submit">✓ Submit Questionnaire → Store in Firestore</button>
+    <div id="statusMsg" class="status-msg"></div>
+  </form>
+  <footer>Confidential • Responses stored in "theory_practice_responses" collection • Data for academic research</footer>
+</div>
+
+<script>
+  // ----------------------------- FIREBASE INIT (provided config) -------------------------
+  const firebaseConfig = {
+    apiKey: "AIzaSyC7FDWkA5wJ10eKjB9rtKticpcOJAg4J2w",
+    authDomain: "fingbrain-f2413.firebaseapp.com",
+    projectId: "fingbrain-f2413",
+    storageBucket: "fingbrain-f2413.firebasestorage.app",
+    messagingSenderId: "353977613992",
+    appId: "1:353977613992:web:8ac9020732454fee0e0c9d"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  // Collection name: theory_practice_responses (as per requirement: create a collection there for responses)
+  const COLLECTION_NAME = "theory_practice_responses";
+
+  // ----------------------------- QUESTION BANK ------------------------------------------
+  // Section B: Clinical experiences (8 items) - exact matching research questions
+  const sectionBItems = [
+    "Do you frequently observe differences between classroom teaching and clinical practice in psychiatric wards?",
+    "Do the clinical procedures performed by ward staff differ from the evidence-based standards taught in school?",
+    "Do you find it difficult to apply classroom knowledge during your psychiatric clinical placements?",
+    "Do you feel anxious when caring for aggressive or unpredictable psychiatric patients on the wards?",
+    "Have you ever felt unprepared for real clinical situations despite your theoretical instruction?",
+    "Does limited supervision during clinical placement negatively affect your overall learning experience?",
+    "Do you experience confusion when ward practices conflict with classroom teaching?",
+    "Do you get inadequate opportunities to practice therapeutic communication skills during clinical placements?"
+  ];
+
+  // Section C: Factors contributing (8 items)
+  const sectionCItems = [
+    "Do high patient-to-nurse ratios on the wards limit opportunities for effective clinical teaching?",
+    "Does inadequate supervision on the wards contribute to your experience of the theory-practice gap?",
+    "Do you believe there is poor collaboration between your college tutors and the clinical ward staff?",
+    "Does a lack of clinical resources on the wards affect your ability to apply theoretical knowledge?",
+    "Does the heavy workload among clinical staff reduce mentorship opportunities for student nurses?",
+    "Do fear and societal stigma associated with mental illness affect student participation during clinical practice?",
+    "Does an insufficient orientation before clinical placement contribute to the theory-practice gap?",
+    "Do you find that short clinical placement periods limit the effective integration of theory into practice?"
+  ];
+
+  // Section D: Effects (7 items)
+  const sectionDItems = [
+    "Does the theory-practice gap reduce your confidence in managing psychiatric patients?",
+    "Does difficulty integrating theory into practice negatively affect your clinical decision-making skills?",
+    "Does the theory-practice gap negatively affect your therapeutic communication skills with patients?",
+    "Do you sometimes rely more on routine ward practices than evidence-based nursing care?",
+    "Does the theory-practice gap reduce your overall readiness for professional psychiatric nursing practice?",
+    "Does the gap reduce your confidence specifically in handling aggressive psychiatric patients?",
+    "Does the difficulty of applying theory in practice increase your stress levels during clinical placements?"
+  ];
+
+  // Section E: Strategies (7 items)
+  const sectionEItems = [
+    "Would increased clinical supervision improve your integration of theory and practice?",
+    "Would regular mentorship by experienced psychiatric nurses improve your clinical competence?",
+    "Should simulation-based learning be strengthened within your psychiatric nursing education?",
+    "Would strong collaboration between tutors and clinical staff reduce the theory-practice gap?",
+    "Would adequate clinical resources and clinical staffing improve your practical learning experiences?",
+    "Would frequent feedback from clinical instructors help you apply theory effectively?",
+    "Would longer and more structured clinical placements improve your practical competence?"
+  ];
+
+  // Helper to generate radio group (Yes/No) with unique name based on index and prefix
+  function generateRadioGroup(prefix, idx, questionText) {
+    const name = `${prefix}_${idx}`;
+    return `
+      <div class="question-item">
+        <div class="question-text">${idx+1}. ${questionText}</div>
+        <div class="options">
+          <label><input type="radio" name="${name}" value="Yes" required> Yes</label>
+          <label><input type="radio" name="${name}" value="No"> No</label>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderSections() {
+    // Section B
+    const bContainer = document.getElementById("sectionB");
+    bContainer.innerHTML = sectionBItems.map((q, i) => generateRadioGroup("expB", i, q)).join('');
+    // Section C
+    const cContainer = document.getElementById("sectionC");
+    cContainer.innerHTML = sectionCItems.map((q, i) => generateRadioGroup("factorC", i, q)).join('');
+    // Section D
+    const dContainer = document.getElementById("sectionD");
+    dContainer.innerHTML = sectionDItems.map((q, i) => generateRadioGroup("effectD", i, q)).join('');
+    // Section E
+    const eContainer = document.getElementById("sectionE");
+    eContainer.innerHTML = sectionEItems.map((q, i) => generateRadioGroup("strategyE", i, q)).join('');
+  }
+
+  // Helper to collect radio group values for a given prefix and total count
+  function collectRadioGroupValues(prefix, totalCount) {
+    let answers = [];
+    for (let i = 0; i < totalCount; i++) {
+      const radioName = `${prefix}_${i}`;
+      const selected = document.querySelector(`input[name="${radioName}"]:checked`);
+      answers.push(selected ? selected.value : null);
+    }
+    return answers;
+  }
+
+  // Collect full form + build Firestore document
+  async function submitFormData(event) {
+    event.preventDefault();
+
+    // 1) DEMOGRAPHICS (standard required fields)
+    const age = document.getElementById("age").value;
+    const genderElem = document.querySelector('input[name="gender"]:checked');
+    const programme = document.getElementById("programme").value;
+    const level = document.getElementById("level").value;
+    const placements = document.getElementById("placements").value;
+    const difficultyAppElem = document.querySelector('input[name="difficultyApp"]:checked');
+    const supervisionRecElem = document.querySelector('input[name="supervisionRec"]:checked');
+
+    if (!age || !genderElem || !programme || !level || !placements || !difficultyAppElem || !supervisionRecElem) {
+      showStatus("Please complete all demographic fields (Age, Gender, Programme, Level, Placements, Difficulty, Supervision).", true);
+      return;
+    }
+
+    // Validate all radio groups for sections B, C, D, E
+    const bAnswers = collectRadioGroupValues("expB", sectionBItems.length);
+    const cAnswers = collectRadioGroupValues("factorC", sectionCItems.length);
+    const dAnswers = collectRadioGroupValues("effectD", sectionDItems.length);
+    const eAnswers = collectRadioGroupValues("strategyE", sectionEItems.length);
+
+    const allAnswers = [...bAnswers, ...cAnswers, ...dAnswers, ...eAnswers];
+    if (allAnswers.some(ans => ans === null)) {
+      showStatus("❌ Please answer ALL questions (Yes/No) in Sections B, C, D, and E before submitting.", true);
+      return;
+    }
+
+    // Prepare payload for Firestore
+    const responseData = {
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+      demographic: {
+        age,
+        gender: genderElem.value,
+        programmeOfStudy: programme,
+        academicLevel: level,
+        clinicalPlacementsCount: placements,
+        difficultyApplyingTheory: difficultyAppElem.value,
+        receivedSupervision: supervisionRecElem.value
+      },
+      sectionB_clinicalExperiences: {
+        q1_observeDiff: bAnswers[0],
+        q2_proceduresDiffStandards: bAnswers[1],
+        q3_difficultApplyKnowledge: bAnswers[2],
+        q4_anxiousAggressivePatients: bAnswers[3],
+        q5_unpreparedRealSituations: bAnswers[4],
+        q6_limitedSupervisionNegEffect: bAnswers[5],
+        q7_confusionWardVsClass: bAnswers[6],
+        q8_inadequateTherapeuticComm: bAnswers[7]
+      },
+      sectionC_contributingFactors: {
+        q1_highPatientRatio: cAnswers[0],
+        q2_inadequateSupervision: cAnswers[1],
+        q3_poorCollabTutorsStaff: cAnswers[2],
+        q4_lackClinicalResources: cAnswers[3],
+        q5_heavyWorkloadMentorship: cAnswers[4],
+        q6_fearStigmaParticipation: cAnswers[5],
+        q7_insufficientOrientation: cAnswers[6],
+        q8_shortPlacementPeriod: cAnswers[7]
+      },
+      sectionD_effectsCompetence: {
+        q1_reduceConfidenceManage: dAnswers[0],
+        q2_affectDecisionMaking: dAnswers[1],
+        q3_affectTherapeuticComm: dAnswers[2],
+        q4_relyRoutineWards: dAnswers[3],
+        q5_reduceReadiness: dAnswers[4],
+        q6_reduceConfidenceAggressive: dAnswers[5],
+        q7_increaseStressLevels: dAnswers[6]
+      },
+      sectionE_bridgingStrategies: {
+        q1_increasedSupervision: eAnswers[0],
+        q2_regularMentorship: eAnswers[1],
+        q3_simulationLearning: eAnswers[2],
+        q4_collaborationReduceGap: eAnswers[3],
+        q5_resourcesStaffing: eAnswers[4],
+        q6_frequentFeedback: eAnswers[5],
+        q7_longerStructuredPlacements: eAnswers[6]
+      },
+      // Also store full questions/answers in raw arrays for flexible analysis (optional)
+      rawSectionB_questions: sectionBItems,
+      rawSectionB_responses: bAnswers,
+      rawSectionC_questions: sectionCItems,
+      rawSectionC_responses: cAnswers,
+      rawSectionD_questions: sectionDItems,
+      rawSectionD_responses: dAnswers,
+      rawSectionE_questions: sectionEItems,
+      rawSectionE_responses: eAnswers
+    };
+
+    // Disable submit button to prevent double submission
+    const submitBtn = document.querySelector(".btn-submit");
+    const originalText = submitBtn.innerText;
+    submitBtn.disabled = true;
+    submitBtn.innerText = "Sending...";
+
+    try {
+      // Save to Firestore collection "theory_practice_responses"
+      await db.collection(COLLECTION_NAME).add(responseData);
+      showStatus("✅ Questionnaire submitted successfully! Your responses have been stored in the 'theory_practice_responses' collection. Thank you.", false);
+      // Optional: reset form after success? keep data for review but could reset.
+      document.getElementById("researchForm").reset();
+      // Re-render radio sections because resetting doesn't clear dynamic radios well? We'll keep it simple: manually clear all radio groups
+      // but to preserve UX better we just reset only selected radios, but user can re-submit if needed. Resetting form removes all.
+      // However dynamic sections need re-generation but easiest: reload page? not user friendly. So we just clear radio groups via DOM.
+      clearAllRadios();
+      renderSections();  // fresh clean sections (answers cleared)
+      // Reset demographics selects too (already reset via form.reset)
+    } catch (error) {
+      console.error("Firestore error:", error);
+      showStatus(`❌ Submission failed: ${error.message}. Check console & network.`, true);
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerText = originalText;
+    }
+  }
+
+  function clearAllRadios() {
+    const allRadios = document.querySelectorAll('input[type="radio"]');
+    allRadios.forEach(radio => radio.checked = false);
+  }
+
+  function showStatus(msg, isError) {
+    const statusDiv = document.getElementById("statusMsg");
+    statusDiv.innerText = msg;
+    statusDiv.style.display = "block";
+    if (isError) {
+      statusDiv.classList.add("error");
+    } else {
+      statusDiv.classList.remove("error");
+    }
+    setTimeout(() => {
+      statusDiv.style.display = "none";
+    }, 5000);
+  }
+
+  // Reset helper for fresh radio groups after reset (ensuring required works)
+  function resetFormAndRebind() {
+    const form = document.getElementById("researchForm");
+    form.reset();
+    clearAllRadios();
+    renderSections();   // re-render all radio grids to have clean required radios
+  }
+
+  // Event listener for submit
+  document.getElementById("researchForm").addEventListener("submit", submitFormData);
+  // Initialize dynamic sections
+  renderSections();
+
+  // Ensure if user manually wants to "reset" they get consistent state.
+  const resetBtn = document.createElement("button");
+  resetBtn.type = "button";
+  resetBtn.innerText = "⟳ Reset Form";
+  resetBtn.style.background = "#eef2f5";
+  resetBtn.style.border = "1px solid #bbcfda";
+  resetBtn.style.padding = "0.5rem 1rem";
+  resetBtn.style.borderRadius = "40px";
+  resetBtn.style.marginTop = "1rem";
+  resetBtn.style.cursor = "pointer";
+  resetBtn.style.fontWeight = "500";
+  resetBtn.style.width = "auto";
+  resetBtn.style.fontFamily = "inherit";
+  const submitParent = document.querySelector(".btn-submit");
+  submitParent.insertAdjacentElement('afterend', resetBtn);
+  resetBtn.addEventListener("click", () => {
+    document.getElementById("researchForm").reset();
+    clearAllRadios();
+    renderSections();
+    showStatus("Form has been reset. All answers cleared.", false);
+  });
+</script>
+</body>
+</html>
